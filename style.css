@@ -34,6 +34,20 @@
   }
 }
 
+/* ── Animations ───────────────────────────────────────── */
+
+@keyframes contentFade {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.content-enter {
+  animation: contentFade 0.2s ease both;
+  will-change: opacity, transform;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: var(--bg);
@@ -58,6 +72,8 @@ h1 {
   color: var(--text-2);
   margin-bottom: 1.75rem;
 }
+
+/* ── Tabs ─────────────────────────────────────────────── */
 
 .tabs {
   display: flex;
@@ -86,6 +102,14 @@ h1 {
 
 .tab:hover:not(.active) { background: var(--bg-2); color: var(--text); }
 
+/* ── Table ────────────────────────────────────────────── */
+
+.table-wrap {
+  overflow-x: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 
 th {
@@ -97,10 +121,11 @@ th {
   text-transform: uppercase;
   letter-spacing: 0.05em;
   border-bottom: 0.5px solid var(--border);
+  white-space: nowrap;
 }
 
 td {
-  padding: 10px 10px;
+  padding: 10px;
   border-bottom: 0.5px solid var(--border);
   color: var(--text);
 }
@@ -117,6 +142,8 @@ tr:hover td { background: var(--bg-2); }
 .wins   { color: var(--success); font-weight: 500; text-align: center; }
 .losses { color: var(--danger); text-align: center; }
 .num    { text-align: center; color: var(--text-2); }
+
+/* ── Labels & controls ────────────────────────────────── */
 
 .section-label {
   font-size: 11px;
@@ -143,6 +170,7 @@ select, input[type="text"] {
   background: var(--bg);
   color: var(--text);
   outline: none;
+  min-width: 0;
 }
 
 select:focus, input[type="text"]:focus {
@@ -160,7 +188,8 @@ button {
   font-size: 13px;
   font-family: inherit;
   color: var(--text);
-  transition: background 0.12s;
+  transition: background 0.12s, opacity 0.12s;
+  white-space: nowrap;
 }
 
 button:hover { background: var(--bg-2); }
@@ -173,13 +202,20 @@ button.primary {
 
 button.primary:hover { opacity: 0.88; }
 
+/* ── Flash message ────────────────────────────────────── */
+
 .flash {
   font-size: 13px;
   color: var(--text-2);
   margin-top: 0.6rem;
   min-height: 20px;
-  transition: opacity 0.3s;
+  opacity: 0;
+  transition: opacity 0.25s;
 }
+
+.flash.show { opacity: 1; }
+
+/* ── Chips ────────────────────────────────────────────── */
 
 .chip-list { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 0.75rem; }
 
@@ -199,9 +235,12 @@ button.primary:hover { opacity: 0.88; }
   color: var(--text-3);
   font-size: 15px;
   line-height: 1;
+  transition: color 0.12s;
 }
 
 .chip-x:hover { color: var(--danger); }
+
+/* ── Add row / misc ───────────────────────────────────── */
 
 .add-row {
   display: flex;
@@ -209,7 +248,7 @@ button.primary:hover { opacity: 0.88; }
   margin-bottom: 0.5rem;
 }
 
-.add-row input { flex: 1; }
+.add-row input { flex: 1; min-width: 0; }
 
 .danger-btn {
   border-color: var(--danger);
@@ -226,3 +265,29 @@ button.primary:hover { opacity: 0.88; }
 }
 
 hr { border: none; border-top: 0.5px solid var(--border); margin: 1.5rem 0; }
+
+/* ── Mobile responsive ────────────────────────────────── */
+
+@media (max-width: 520px) {
+  body { padding: 1.25rem 1rem; font-size: 14px; }
+  h1 { font-size: 19px; }
+  .subtitle { margin-bottom: 1.25rem; }
+
+  /* prevent iOS from zooming into inputs */
+  select, input[type="text"] { font-size: 16px; }
+
+  .log-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .log-row select,
+  .log-row button { width: 100%; }
+  .vs-label { text-align: center; }
+
+  td, th { padding: 8px 8px; }
+}
+
+@media (max-width: 360px) {
+  body { padding: 1rem 0.75rem; }
+  .tab { padding: 5px 10px; font-size: 12px; }
+}

@@ -55,6 +55,14 @@ function getScores(sport) {
   }).sort((a, b) => b.w - a.w || a.l - b.l || a.name.localeCompare(b.name));
 }
 
+function animateContent() {
+  const el = document.getElementById('content');
+  if (!el) return;
+  el.classList.remove('content-enter');
+  void el.offsetWidth;
+  el.classList.add('content-enter');
+}
+
 function render() {
   updateSubtitle();
   renderTabs();
@@ -70,38 +78,44 @@ function renderTabs() {
 
 function renderContent() {
   const el = document.getElementById('content');
-  if (tab === '__manage') { renderManage(el); return; }
-  if (!tab) { el.innerHTML = '<p class="empty-state">No sports added yet. Click "+ manage" to get started.</p>'; return; }
+  if (tab === '__manage') { renderManage(el); animateContent(); return; }
+  if (!tab) {
+    el.innerHTML = '<p class="empty-state">No sports added yet. Click "+ manage" to get started.</p>';
+    animateContent();
+    return;
+  }
 
   const rows = getScores(tab);
   const hasGames = rows.some(r => r.played > 0);
 
   el.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Player</th>
-          <th style="text-align:center">W</th>
-          <th style="text-align:center">L</th>
-          <th style="text-align:center">Played</th>
-          <th style="text-align:center">Win %</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${rows.map((r, i) => {
-          const rankClass = hasGames ? (i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '') : '';
-          return `<tr>
-            <td class="rank ${rankClass}">${hasGames ? i + 1 : '—'}</td>
-            <td class="player-name">${esc(r.name)}</td>
-            <td class="wins">${r.w}</td>
-            <td class="losses">${r.l}</td>
-            <td class="num">${r.played}</td>
-            <td class="num">${r.pct !== null ? r.pct + '%' : '—'}</td>
-          </tr>`;
-        }).join('')}
-      </tbody>
-    </table>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th style="text-align:center">W</th>
+            <th style="text-align:center">L</th>
+            <th style="text-align:center">Played</th>
+            <th style="text-align:center">Win %</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.map((r, i) => {
+            const rankClass = hasGames ? (i === 0 ? 'gold' : i === 1 ? 'silver' : i === 2 ? 'bronze' : '') : '';
+            return `<tr>
+              <td class="rank ${rankClass}">${hasGames ? i + 1 : '—'}</td>
+              <td class="player-name">${esc(r.name)}</td>
+              <td class="wins">${r.w}</td>
+              <td class="losses">${r.l}</td>
+              <td class="num">${r.played}</td>
+              <td class="num">${r.pct !== null ? r.pct + '%' : '—'}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
+    </div>
 
     <div class="section-label">Log a result</div>
     <div class="log-row">
@@ -112,6 +126,8 @@ function renderContent() {
     </div>
     <div class="flash" id="flash"></div>
   `;
+
+  animateContent();
 }
 
 function renderManage(el) {
@@ -148,8 +164,8 @@ function renderManage(el) {
 
     <div class="section-label">Export / import</div>
     <div class="log-row">
-      <button onclick="exportData()">Export data</button>
-      <button onclick="importData()">Import data</button>
+      <button onclick="exportData()">Export scores (.xlsx)</button>
+      <button onclick="importData()">Import backup</button>
     </div>
     <div class="flash" id="flash"></div>
   `;
@@ -176,8 +192,8 @@ function logResult() {
   data.scores[wk].w++;
   data.scores[lk].l++;
   saveData();
-  flash(w + ' beat ' + l + ' — saved!');
   renderContent();
+  flash(w + ' beat ' + l + ' — saved!');
 }
 
 function addSport() {
@@ -218,11 +234,51 @@ function resetSport() {
 }
 
 function exportData() {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'leaderboard-backup.json';
-  a.click();
+  if (typeof XLSX === 'undefined') {
+    alert('Spreadsheet library not loaded. Check your internet connection.');
+    return;
+  }
+  try {
+    const wb = XLSX.utils.book_new();
+    data.sports.forEach(sport => {
+      const rows = getScores(sport);
+      const hasGames = rows.some(r => r.played > 0);
+      const wsData = [
+        ['Rank', 'Player', 'Wins', 'Losses', 'Played', 'Win %'],
+        ...rows.map((r, i) => [
+          hasGames ? i + 1 : '',
+          r.name,
+          r.w,
+          r.l,
+          r.played,
+          r.pct !== null ? r.pct / 100 : ''
+        ])
+      ];
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      ws['!cols'] = [{ wch: 6 }, { wch: 18 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 8 }];
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        const addr = XLSX.utils.encode_cell({ r: R, c: 5 });
+        if (ws[addr] && typeof ws[addr].v === 'number') ws[addr].z = '0%';
+      }
+      const sheetName = sport.replace(/[:\\/?\*\[\]]/g, '-').substring(0, 31);
+      XLSX.utils.book_append_sheet(wb, ws, sheetName);
+    });
+    const count = (parseInt(localStorage.getItem('lb_export_count') || '0', 10) + 1);
+    localStorage.setItem('lb_export_count', count);
+    const filename = 'current-' + String(count).padStart(3, '0') + '.xlsx';
+    const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([out], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); document.body.removeChild(a); }, 100);
+  } catch (e) {
+    alert('Export failed: ' + e.message);
+  }
 }
 
 function importData() {
@@ -256,8 +312,9 @@ function flash(msg) {
   const el = document.getElementById('flash');
   if (!el) return;
   el.textContent = msg;
-  el.style.opacity = '1';
-  setTimeout(() => { el.style.opacity = '0'; }, 3000);
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
 }
 
 function esc(s) {
