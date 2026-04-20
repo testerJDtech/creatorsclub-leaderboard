@@ -64,7 +64,7 @@ function render() {
 function renderTabs() {
   const el = document.getElementById('tabs');
   el.innerHTML = data.sports.map(s =>
-    `<button class="tab${s === tab ? ' active' : ''}" onclick="setTab(${JSON.stringify(s)})">${esc(s)}</button>`
+    `<button class="tab${s === tab ? ' active' : ''}" onclick="setTab(${esc(JSON.stringify(s))})">${esc(s)}</button>`
   ).join('') + `<button class="tab${tab === '__manage' ? ' active' : ''}" onclick="setTab('__manage')">+ manage</button>`;
 }
 
@@ -118,7 +118,7 @@ function renderManage(el) {
   el.innerHTML = `
     <div class="section-label" style="margin-top:0">Sports</div>
     <div class="chip-list">${data.sports.map(s =>
-      `<span class="chip">${esc(s)} <span class="chip-x" onclick="removeSport(${JSON.stringify(s)})">×</span></span>`
+      `<span class="chip">${esc(s)} <span class="chip-x" onclick="removeSport(${esc(JSON.stringify(s))})">×</span></span>`
     ).join('')}</div>
     <div class="add-row">
       <input type="text" id="new-sport" placeholder="Add a sport..." onkeydown="if(event.key==='Enter')addSport()">
@@ -129,7 +129,7 @@ function renderManage(el) {
 
     <div class="section-label">Players</div>
     <div class="chip-list">${data.players.map(p =>
-      `<span class="chip">${esc(p)} <span class="chip-x" onclick="removePlayer(${JSON.stringify(p)})">×</span></span>`
+      `<span class="chip">${esc(p)} <span class="chip-x" onclick="removePlayer(${esc(JSON.stringify(p))})">×</span></span>`
     ).join('')}</div>
     <div class="add-row">
       <input type="text" id="new-player" placeholder="Add a player..." onkeydown="if(event.key==='Enter')addPlayer()">
