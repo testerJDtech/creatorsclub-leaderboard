@@ -193,6 +193,8 @@ function logResult() {
   data.scores[lk].l++;
   saveData();
   renderContent();
+  document.getElementById('winner').value = w;
+  document.getElementById('loser').value = l;
   flash(w + ' beat ' + l + ' — saved!');
 }
 
